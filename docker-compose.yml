@@ -1,0 +1,13 @@
+services:
+  marketplace-sync:
+    build: .
+    container_name: marketplace-sync
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_PATH: /srv/app/data/sync.db
+    volumes:
+      - ./data:/srv/app/data
+    # Bound to localhost only: reach it through an SSH tunnel or put a reverse proxy (HTTPS) in front
+    ports:
+      - "127.0.0.1:8010:8010"

@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order API Tester</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1d2330; --muted: #5b6475; --border: #dde1e8;
+    --accent: #2457d6; --code-bg: #f1f3f7;
+    --ok: #137a3a; --ok-bg: #e5f5ea; --warn: #8a5a00; --warn-bg: #fff3d6; --bad: #b42318; --bad-bg: #fde8e6;
+    --get: #137a3a; --post: #2457d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --panel: #1a1e26; --text: #e6e9ef; --muted: #9aa3b2; --border: #2c323d;
+      --accent: #7aa2ff; --code-bg: #12151b;
+      --ok: #5fd08a; --ok-bg: #173323; --warn: #f2c35b; --warn-bg: #3a2e12; --bad: #ff8a80; --bad-bg: #3b1a17;
+      --get: #5fd08a; --post: #7aa2ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; background: var(--panel); border-bottom: 1px solid var(--border); padding: 12px 16px; }
+  .bar { max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  h1 { font-size: 17px; margin: 0 12px 0 0; }
+  label.inline { display: flex; gap: 6px; align-items: center; color: var(--muted); }
+  input, textarea, select { font: inherit; color: var(--text); background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
+  input[type=password] { width: 260px; max-width: 100%; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--code-bg); color: var(--muted); border: 1px solid var(--border); }
+  .pill.ok { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+  .pill.bad { background: var(--bad-bg); color: var(--bad); border-color: transparent; }
+  main { max-width: 1200px; margin: 0 auto; padding: 16px; display: grid; grid-template-columns: 220px 1fr; gap: 16px; }
+  nav { position: sticky; top: 76px; align-self: start; display: flex; flex-direction: column; gap: 2px; }
+  nav a { color: var(--text); text-decoration: none; padding: 6px 8px; border-radius: 6px; display: flex; gap: 8px; align-items: baseline; }
+  nav a:hover { background: var(--panel); }
+  .intro, .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .intro p { margin: 4px 0; color: var(--muted); }
+  .card h2 { font-size: 16px; margin: 0 0 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .method { font: 600 12px ui-monospace, Consolas, monospace; padding: 2px 6px; border-radius: 4px; color: #fff; }
+  .method.GET { background: var(--get); } .method.POST { background: var(--post); }
+  @media (prefers-color-scheme: dark) { .method { color: #0d1117; } }
+  code, .path { font-family: ui-monospace, Consolas, monospace; }
+  .path { font-size: 14px; word-break: break-all; }
+  .desc { color: var(--muted); margin: 0 0 12px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .col h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 6px; }
+  textarea { width: 100%; min-height: 220px; font: 12.5px/1.45 ui-monospace, Consolas, monospace; resize: vertical; }
+  pre { margin: 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px; font: 12.5px/1.45 ui-monospace, Consolas, monospace; white-space: pre-wrap; word-break: break-word; max-height: 360px; overflow: auto; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  button { font: inherit; border: 1px solid var(--border); background: var(--panel); color: var(--text); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  @media (prefers-color-scheme: dark) { button.primary { color: #0d1117; } }
+  button:disabled { opacity: .6; cursor: wait; }
+  .status { font: 600 12.5px ui-monospace, Consolas, monospace; padding: 2px 8px; border-radius: 4px; }
+  .s2 { background: var(--ok-bg); color: var(--ok); } .s4 { background: var(--warn-bg); color: var(--warn); } .s5 { background: var(--bad-bg); color: var(--bad); }
+  .muted { color: var(--muted); font-size: 12.5px; }
+  details { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 8px; }
+  summary { cursor: pointer; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; }
+  tr.ex { cursor: pointer; } tr.ex:hover td { background: var(--code-bg); }
+  .warnbox { background: var(--warn-bg); color: var(--warn); border-radius: 6px; padding: 8px 10px; margin-top: 8px; }
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; } nav { position: static; flex-direction: row; flex-wrap: wrap; }
+    .grid { grid-template-columns: 1fr; } header { position: static; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1>Order API Tester</h1>
+    <label class="inline">Admin token <input type="password" id="token" placeholder="X-Admin-Token" autocomplete="off"></label>
+    <div class="pills" id="health"><span class="pill">checking service…</span></div>
+  </div>
+</header>
+<main>
+  <nav id="nav"></nav>
+  <div>
+    <section class="intro">
+      <strong>Flow:</strong> 1&nbsp;Resolve customer → 2&nbsp;Analyze products → 3&nbsp;Push order → 4&nbsp;Track.
+      <p>Each card shows the request, a <em>Send</em> button that calls this backend, and every response it can return (click a row to see the example body).</p>
+      <p>All <code>/api/v1</code> calls need the <code>X-Admin-Token</code> header. Every error has the same shape:
+        <code>{"error": {"code", "message", "step", "portal_status", "portal_response", "details"}}</code>.
+        Fields after <code>message</code> appear only when relevant.</p>
+      <div class="warnbox" id="writeWarn" hidden>Portal writes are <strong>enabled</strong>. Resolve, Push and Process create real customers and orders on the dealer portal.</div>
+    </section>
+    <div id="cards"></div>
+  </div>
+</main>
+
+<script>
+const ERR = (code, message, extra) => ({ error: { code, message, ...(extra || {}) } });
+const PORTAL_REPLY = { "...": "dealer portal reply, passed through unchanged" };
+
+const COMMON = {
+  401: ["unauthorized", "Missing or wrong X-Admin-Token header", ERR("unauthorized", "missing or invalid X-Admin-Token header")],
+  validation: ["validation_error", "Body is missing a required field or has a wrong type", ERR("validation_error", "request is invalid", { details: { errors: [{ type: "missing", loc: ["body", "items"], msg: "Field required" }] } })],
+  missing: ["missing_field", "A dealer/user id is in neither the request nor .env", ERR("missing_field", "source_branch_dealer_id is required (in the request or PORTAL_SOURCE_BRANCH_DEALER_ID in .env)", { step: "analyze" })],
+  rejected: (step) => ["portal_rejected", "Portal answered 400/404/422; its reply is included", ERR("portal_rejected", "dealer portal rejected the request", { step, portal_status: 400, portal_response: { detail: "Invalid part_no" } })],
+  auth: (step) => ["portal_auth_failed", "Portal login failed or the account lacks permission", ERR("portal_auth_failed", "dealer portal rejected our credentials or permissions", { step, portal_status: 403, portal_response: { detail: "Permission denied" } })],
+  p5xx: (step) => ["portal_error", "Portal returned 5xx", ERR("portal_error", "dealer portal returned a server error", { step, portal_status: 500, portal_response: "Internal Server Error" })],
+  unreachable: (step) => ["portal_unreachable", "Network/DNS/TLS error reaching the portal", ERR("portal_unreachable", "could not reach dealer portal: ConnectError", { step })],
+  503: ["portal_not_configured", "PORTAL_BASE_URL / USERNAME / PASSWORD missing in .env", ERR("portal_not_configured", "dealer portal login is not configured (PORTAL_BASE_URL, PORTAL_USERNAME, PORTAL_PASSWORD)")],
+  504: (step) => ["portal_timeout", "Portal took longer than 30 s", ERR("portal_timeout", "dealer portal did not respond in time", { step })],
+  403: (step) => ["portal_writes_disabled", "PORTAL_WRITE_ENABLED=false (safety switch)", ERR("portal_writes_disabled", "creating customers/orders on the dealer portal is disabled (set PORTAL_WRITE_ENABLED=true)", { step })],
+};
+const portalErrors = (step) => [
+  [422, ...COMMON.rejected(step)], [502, ...COMMON.auth(step)], [502, ...COMMON.p5xx(step)],
+  [502, ...COMMON.unreachable(step)], [503, ...COMMON[503]], [504, ...COMMON[504](step)],
+];
+
+const ORDER_ITEMS = [{ part_no: "PSFA001B", quantity: 1 }];
+const ORDER_PAYLOAD = { order_reference_no: "TEST-0001", source_branch_dealer_id: 23, items: ORDER_ITEMS, order_for_user_id: 4, customer_account_id: 2564 };
+const stepOk = (request, status) => ({ ok: true, at: "2026-10-09T10:00:00+00:00", request, portal_status: status, portal_response: PORTAL_REPLY });
+const RESOLVE_PAYLOAD = { shopify_customer_id: "amazon:9000000000", name: "Test Customer", phone: "9000000000", email: null, address: "12 Test Street, Namakkal, Tamil Nadu, 637214", gst_no: null, home_branch_dealer_id: 23 };
+const RECORD = (steps, request) => ({
+  order_reference_no: "TEST-0001", status: "pushed", customer_account_id: 2564, portal_order_id: "98765",
+  request, steps, error: null, created_at: "2026-10-09T10:00:00+00:00", updated_at: "2026-10-09T10:00:02+00:00",
+});
+const PROCESS_REQ = {
+  order_reference_no: "TEST-0001",
+  customer: { external_customer_id: "amazon:9000000000", name: "Test Customer", phone: "9000000000", email: null, address: "12 Test Street, Namakkal, Tamil Nadu, 637214", gst_no: null, home_branch_dealer_id: 23 },
+  items: ORDER_ITEMS, order_for_user_id: 4, source_branch_dealer_id: 23,
+};
+const PROCESS_RECORD = RECORD({ resolve: stepOk(RESOLVE_PAYLOAD, 200), analyze: stepOk(ORDER_PAYLOAD, 200), push_order: stepOk(ORDER_PAYLOAD, 201) }, PROCESS_REQ);
+const DUPLICATE = ERR("duplicate_order", "order TEST-0001 was already pushed to the dealer portal", { details: { portal_order_id: "98765", pushed_at: "2026-10-09T10:00:02+00:00" } });
+
+const ENDPOINTS = [
+  {
+    id: "health", title: "Service health", method: "GET", path: "/health", auth: false,
+    desc: "No auth. Shows whether the portal login is configured, whether writes are enabled, and the last sync results.",
+    responses: [[200, "", "Service is up", { status: "ok", service: "cartrends-marketplace-sync", version: "0.3.0", portal_configured: true, portal_write_enabled: false, tracking_configured: false, dry_run: true, channels: [], "...": "…" }]],
+  },
+  {
+    id: "resolve", title: "1 · Resolve customer", method: "POST", path: "/api/v1/customers/resolve",
+    desc: "Finds the customer on the dealer portal by external_customer_id, or creates them. Use the returned customer_account_id in Analyze/Push. Sent to the portal as shopify_customer_id.",
+    body: PROCESS_REQ.customer,
+    responses: [
+      [200, "", "Customer found or created", { customer_account_id: 2564, order_for_user_id: 4, portal_status: 200, portal_response: PORTAL_REPLY }],
+      [401, ...COMMON[401]], [403, ...COMMON[403]("resolve")], [422, ...COMMON.validation],
+      [422, "missing_field", "No home_branch_dealer_id in the request or .env", ERR("missing_field", "home_branch_dealer_id is required (in the request or PORTAL_HOME_BRANCH_DEALER_ID in .env)", { step: "resolve" })],
+      [502, "unexpected_portal_response", "Portal said OK but the reply had no customer_account_id", ERR("unexpected_portal_response", "portal accepted the customer but its reply has no customer_account_id", { step: "resolve", portal_status: 200, portal_response: PORTAL_REPLY })],
+      ...portalErrors("resolve"),
+    ],
+  },
+  {
+    id: "analyze", title: "2 · Analyze products", method: "POST", path: "/api/v1/orders/analyze",
+    desc: "Read-only check of the parts before placing the order. Nothing is created. can_push=false lists the problems.",
+    body: ORDER_PAYLOAD,
+    responses: [
+      [200, "", "All parts OK", { can_push: true, problems: [], portal_status: 200, portal_response: PORTAL_REPLY }],
+      [200, "", "Some parts unavailable (still HTTP 200)", { can_push: false, problems: ["PSFA001B: OUT_OF_STOCK"], portal_status: 200, portal_response: PORTAL_REPLY }],
+      [401, ...COMMON[401]], [422, ...COMMON.validation], [422, ...COMMON.missing], ...portalErrors("analyze"),
+    ],
+  },
+  {
+    id: "push", title: "3 · Push order", method: "POST", path: "/api/v1/orders",
+    desc: "Places the order on the dealer portal. Each order_reference_no can only be pushed once (409 afterwards). The result is saved and visible via Get order.",
+    body: ORDER_PAYLOAD,
+    responses: [
+      [201, "", "Order placed", RECORD({ push_order: stepOk(ORDER_PAYLOAD, 201) }, { order: ORDER_PAYLOAD })],
+      [401, ...COMMON[401]], [403, ...COMMON[403]("push_order")],
+      [409, "duplicate_order", "This reference was already pushed", DUPLICATE],
+      [409, "portal_conflict", "Portal itself reports a duplicate/conflict", ERR("portal_conflict", "dealer portal reports a conflict (e.g. duplicate order)", { step: "push_order", portal_status: 409, portal_response: PORTAL_REPLY })],
+      [422, ...COMMON.validation], [422, ...COMMON.missing], ...portalErrors("push_order"),
+    ],
+  },
+  {
+    id: "process", title: "1→3 · Process order (full flow)", method: "POST", path: "/api/v1/orders/process",
+    desc: "Resolve → Analyze → Push in one call. This is what Amazon/Flipkart orders use. It stops at the first failing step; the saved record shows every step's request and portal reply. Calling it again for a failed order retries it.",
+    body: PROCESS_REQ,
+    responses: [
+      [201, "", "All three steps succeeded", PROCESS_RECORD],
+      [401, ...COMMON[401]], [403, ...COMMON[403]("resolve")],
+      [409, "duplicate_order", "This reference was already pushed", DUPLICATE],
+      [422, "items_unavailable", "Analyze says the order cannot be placed; nothing was pushed", ERR("items_unavailable", "analyze reports the order cannot be placed", { step: "analyze", details: { problems: ["PSFA001B: OUT_OF_STOCK"] }, portal_status: 200, portal_response: PORTAL_REPLY })],
+      [422, ...COMMON.validation], [422, ...COMMON.missing],
+      [502, "unexpected_portal_response", "Resolve reply had no customer_account_id", ERR("unexpected_portal_response", "portal accepted the customer but its reply has no customer_account_id", { step: "resolve", portal_status: 200, portal_response: PORTAL_REPLY })],
+      ...portalErrors("resolve | analyze | push_order"),
+    ],
+  },
+  {
+    id: "list", title: "List orders", method: "GET", path: "/api/v1/orders", query: "status=&limit=50",
+    desc: "Orders sent through this service, newest first. status: processing, pushed, resolve_failed, analyze_failed, push_order_failed.",
+    responses: [[200, "", "List (may be empty)", [PROCESS_RECORD]], [401, ...COMMON[401]], [422, ...COMMON.validation]],
+  },
+  {
+    id: "get", title: "Get order", method: "GET", path: "/api/v1/orders/{order_reference_no}", param: "TEST-0001",
+    desc: "One order with every step's request, portal status and portal reply. Use it to see why an order failed.",
+    responses: [
+      [200, "", "Order found", PROCESS_RECORD], [401, ...COMMON[401]],
+      [404, "order_not_found", "No order with this reference", ERR("order_not_found", "no order with reference TEST-0001")],
+    ],
+  },
+  {
+    id: "track", title: "4 · Track order", method: "GET", path: "/api/v1/orders/{order_reference_no}/track", param: "TEST-0001",
+    desc: "Current order status from the dealer portal. Returns 501 until PORTAL_TRACK_PATH is set (waiting for the tracking API docs from Shubham).",
+    responses: [
+      [200, "", "Portal tracking reply", { order_reference_no: "TEST-0001", portal_status: 200, portal_response: PORTAL_REPLY }],
+      [401, ...COMMON[401]],
+      [501, "tracking_not_configured", "Tracking API not set up yet", ERR("tracking_not_configured", "tracking API not configured yet (set PORTAL_TRACK_PATH once Shubham shares the docs)", { step: "track" })],
+      ...portalErrors("track"),
+    ],
+  },
+];
+
+const $ = (sel, el = document) => el.querySelector(sel);
+const h = (tag, attrs = {}, ...kids) => {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) k === "class" ? el.className = v : k.startsWith("on") ? el.addEventListener(k.slice(2), v) : el.setAttribute(k, v);
+  for (const kid of kids.flat()) el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+  return el;
+};
+const pretty = (v) => typeof v === "string" ? v : JSON.stringify(v, null, 2);
+const statusClass = (code) => code >= 500 || code === 0 ? "s5" : code >= 400 ? "s4" : "s2";
+
+const store = {
+  get(k) { try { return sessionStorage.getItem(k) || ""; } catch { return ""; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); } catch {} },
+};
+const tokenInput = $("#token");
+tokenInput.value = store.get("adminToken");
+tokenInput.addEventListener("input", () => store.set("adminToken", tokenInput.value));
+
+function urlFor(ep, card) {
+  let path = ep.path;
+  if (ep.param) path = path.replace("{order_reference_no}", encodeURIComponent($(".param", card).value.trim()));
+  if (ep.query) {
+    const q = $(".query", card).value.trim();
+    const clean = new URLSearchParams(q);
+    for (const [k, v] of [...clean]) if (!v) clean.delete(k);
+    if ([...clean].length) path += "?" + clean.toString();
+  }
+  return path;
+}
+
+async function send(ep, card) {
+  const btn = $(".send", card), out = $(".out", card), meta = $(".meta", card);
+  const headers = {};
+  if (ep.auth !== false) headers["X-Admin-Token"] = tokenInput.value;
+  let body;
+  if (ep.body) {
+    try { body = JSON.stringify(JSON.parse($("textarea", card).value)); }
+    catch (e) { meta.replaceChildren(h("span", { class: "status s4" }, "invalid JSON"), " ", e.message); return; }
+    headers["Content-Type"] = "application/json";
+  }
+  btn.disabled = true; meta.replaceChildren(h("span", { class: "muted" }, "sending…"));
+  const started = performance.now();
+  try {
+    const resp = await fetch(urlFor(ep, card), { method: ep.method, headers, body });
+    const text = await resp.text();
+    let shown = text; try { shown = pretty(JSON.parse(text)); } catch {}
+    meta.replaceChildren(h("span", { class: "status " + statusClass(resp.status) }, `${resp.status} ${resp.statusText}`), " ", h("span", { class: "muted" }, `${Math.round(performance.now() - started)} ms`));
+    out.textContent = shown || "(empty body)";
+  } catch (e) {
+    meta.replaceChildren(h("span", { class: "status s5" }, "network error"));
+    out.textContent = String(e);
+  } finally { btn.disabled = false; }
+}
+
+function curlFor(ep, card) {
+  const parts = [`curl -X ${ep.method} '${location.origin}${urlFor(ep, card)}'`];
+  if (ep.auth !== false) parts.push(`-H 'X-Admin-Token: <ADMIN_TOKEN>'`);
+  if (ep.body) parts.push(`-H 'Content-Type: application/json'`, `-d '${$("textarea", card).value.replace(/'/g, "'\\''")}'`);
+  return parts.join(" \\\n  ");
+}
+
+function renderCard(ep) {
+  const card = h("section", { class: "card", id: ep.id });
+  const exampleOut = h("pre", {}, pretty(ep.responses[0][3]));
+  const exampleLabel = h("div", { class: "muted" }, `Example: ${ep.responses[0][0]} ${ep.responses[0][2]}`);
+  const rows = ep.responses.map(([code, errCode, when, example]) =>
+    h("tr", { class: "ex", onclick: () => { exampleOut.textContent = pretty(example); exampleLabel.textContent = `Example: ${code} ${errCode || ""} ${when}`; } },
+      h("td", {}, h("span", { class: "status " + statusClass(code) }, code)), h("td", {}, h("code", {}, errCode || "-")), h("td", {}, when)));
+
+  const controls = h("div", { class: "row" });
+  if (ep.param) controls.append(h("label", { class: "inline" }, "order_reference_no", h("input", { class: "param", value: ep.param })));
+  if (ep.query) controls.append(h("label", { class: "inline" }, "query", h("input", { class: "query", value: ep.query })));
+  controls.append(
+    h("button", { class: "primary send", onclick: () => send(ep, card) }, "Send"),
+    h("button", { onclick: (e) => { navigator.clipboard?.writeText(curlFor(ep, card)); e.target.textContent = "Copied"; setTimeout(() => e.target.textContent = "Copy curl", 1200); } }, "Copy curl"),
+    ep.body ? h("button", { onclick: () => { $("textarea", card).value = pretty(ep.body); } }, "Reset body") : "",
+  );
+
+  card.append(
+    h("h2", {}, h("span", { class: "method " + ep.method }, ep.method), h("span", { class: "path" }, ep.path)),
+    h("div", { style: "font-weight:600;margin-bottom:2px" }, ep.title),
+    h("p", { class: "desc" }, ep.desc),
+    controls,
+    h("div", { class: "grid" },
+      h("div", { class: "col" }, h("h3", {}, ep.body ? "Request body (editable)" : "Request"),
+        ep.body ? h("textarea", { spellcheck: "false" }, pretty(ep.body)) : h("pre", {}, `${ep.method} ${ep.path}${ep.auth === false ? "" : "\nX-Admin-Token: <token>"}`)),
+      h("div", { class: "col" }, h("h3", {}, "Live response"), h("div", { class: "meta row" }, h("span", { class: "muted" }, "not sent yet")), h("pre", { class: "out" }, "—")),
+    ),
+    h("details", {}, h("summary", {}, `Possible responses (${ep.responses.length})`),
+      h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "HTTP"), h("th", {}, "error.code"), h("th", {}, "When"))), h("tbody", {}, rows)),
+      exampleLabel, exampleOut),
+  );
+  return card;
+}
+
+for (const ep of ENDPOINTS) {
+  $("#cards").append(renderCard(ep));
+  $("#nav").append(h("a", { href: "#" + ep.id }, h("span", { class: "method " + ep.method }, ep.method), ep.title));
+}
+
+fetch("/health").then(r => r.json()).then(hs => {
+  const pill = (ok, yes, no) => h("span", { class: "pill " + (ok ? "ok" : "bad") }, ok ? yes : no);
+  $("#health").replaceChildren(
+    pill(hs.portal_configured, "portal login set", "portal login missing"),
+    pill(!hs.portal_write_enabled, "writes off (safe)", "writes ON"),
+    pill(hs.tracking_configured, "tracking set", "tracking not set"),
+  );
+  $("#writeWarn").hidden = !hs.portal_write_enabled;
+}).catch(() => $("#health").replaceChildren(h("span", { class: "pill bad" }, "service unreachable")));
+</script>
+</body>
+</html>
